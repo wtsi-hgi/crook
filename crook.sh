@@ -38,13 +38,18 @@ locked=$?
 # Note that the stream of filenames provided from the drain phase will be the vault files, with their obfuscated names. It is up to the downstream handler to decode these, if necessary.
 
 
+getJobIds(){
+    read from logs 
+}
+
+
 
 
 case $1 in
   ready)  
-     # shepherd ready && exit 1;; # (Exit Code 1: Shepherd is busy with a previous job.)
-     # no_capacity=check_shephord_capacity $2;; #(Exit Code 2: The requested capacity is not available.)
-     # no_capacity && exit 2;;
+     for jobid in jobids
+        # shepherd status jobid && exit 1;; # (Exit Code 1: Shepherd is busy with a previous job.)
+    # check_shephord_capacity $2 && exit 2;; #(Exit Code 2: The requested capacity is not available.)
      exit ${locked};;
   *)      (( locked )) && exit 1;;
 esac
