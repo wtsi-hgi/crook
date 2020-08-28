@@ -38,11 +38,6 @@ locked=$?
 # Note that the stream of filenames provided from the drain phase will be the vault files, with their obfuscated names. It is up to the downstream handler to decode these, if necessary.
 
 
-getJobIds(){
-    read from logs 
-}
-
-
 
 
 case $1 in

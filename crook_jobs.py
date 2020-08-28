@@ -1,7 +1,10 @@
 import re
 import os
-import sqlite3
+
 import subprocess
+
+
+import jobs as Jobs
 
 def parse_output_for_jobId(log_file_path):
     """ parse output of log when submitting a job to Stepherd to get jobid"""
@@ -15,29 +18,9 @@ def parse_output_for_jobId(log_file_path):
                 id = re.compile(r'\d+').search(match_text.group())
                 if id:
                     id = id.group()
-                    print("Job ID:", id)
-                
 
 
-def save_job_in_db(id):
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    c.execute('''INSERT INTO jobs VALUES (id,"busy")''')
-
-def update_job_in_db(jobid, status):
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    c.execute('''UPDATE jobs VALUES (jobid,status)''')
-
-def update_job_staus:
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    all_jobs = c.execute('''select * from jobs''')
-    for jobid, status in all_jobs:
-        status = find_status(jobid)
-        update_status_in_db(jobid, status)
-
-def find_status(jobid):
+def find_job_status(jobid):
     '''parse output of shephered status jobid to get status '''
     output = subprocess.run(["shepherd" , "status", jobid], capture_output=True)
     regex_for_job_status = re.compile(r"Failed: [01]")
@@ -51,15 +34,25 @@ def find_status(jobid):
                 id = id.group()
                 print("Job Status (0 means Completed):", id)
                 return id
+                    print("Job ID:", id)
+
+  
+
+def update_jobs_status:
+    """ update statys of all jobs in db to latest"""
+    all_jobs = Jobs.findAll()
+    are_all_completed = True
+    for row in all_jobs:
+        job_id = row[0]
+        job_status = row[1]
+        status = find_job_status(job_id)
+        Jobs.update(job_id, job_status)
+        if status:
+            are_all_completed = False
+    return are_all_completed
 
 
 
-
-# def create_jobs_db:
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE jobs
-             (jobid int, status text)''')
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
