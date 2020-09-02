@@ -1,6 +1,8 @@
 import argparse
 import fileinput
 from logging import log
+import os
+from pathlib import Path
 
 
 import crook_jobs.py
@@ -31,7 +33,13 @@ def main(capacity):
         is_ready(capacity)
     else:
         # read from stdin \0 delimited filenames. From the docs: "Note that if you want to send data to the process’s stdin, you need to create the Popen object with stdin=PIPE. Similarly, to get anything other than None in the result tuple, you need to give stdout=PIPE and/or stderr=PIPE too."
-        subprocess.run(['../shepherd.sh', 'submit'], input = sys.stdin)
+        run_path = Path('./run/crook')
+        os.mkdir(run_path)        
+        with open('./run/crook/crook.fofn', 'w') as f:
+            files = sys.stdin.read()
+            files.replace(r'\0', r'\n')
+            f.write(files)
+        subprocess.run(['../shepherd.sh', 'submit', 'crook'])
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
 if __name__ == "__main__":
