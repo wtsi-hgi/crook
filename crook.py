@@ -11,7 +11,7 @@ def is_ready(capacity):
         exit 1
     if is_capacity_full(capacity):
         exit 2
-    exit 0
+    exit 0  
 
 
 def is_shepherd_busy:
@@ -31,11 +31,8 @@ def main(capacity):
         is_ready(capacity)
     else:
         # read from stdin \0 delimited filenames. From the docs: "Note that if you want to send data to the process’s stdin, you need to create the Popen object with stdin=PIPE. Similarly, to get anything other than None in the result tuple, you need to give stdout=PIPE and/or stderr=PIPE too."
-        subprocess.Popen(['shepherd.sh', 'submit'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        subprocess.run(['../shepherd.sh', 'submit'], input = sys.stdin)
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
-        process.communicate(input = sys.stdin)[0]
-        process.close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hand off files to archive to Shepherd)

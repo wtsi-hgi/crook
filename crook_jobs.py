@@ -41,15 +41,15 @@ def find_job_status(jobid):
 def update_jobs_status:
     """ update statys of all jobs in db to latest"""
     all_jobs = Jobs.findAll()
-    are_all_completed = True
+    are_jobs_completed = True
     for row in all_jobs:
         job_id = row[0]
         job_status = row[1]
         status = find_job_status(job_id)
         Jobs.update(job_id, job_status)
         if status:
-            are_all_completed = False
-    return are_all_completed
+            are_jobs_completed = False
+    return are_jobs_completed
 
 
 
