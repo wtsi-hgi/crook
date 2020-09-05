@@ -1,24 +1,27 @@
 import argparse
 import fileinput
-from logging import log
 import os
+import sys
 from pathlib import Path
 
+import crook_jobs
+import jobs as Jobs
 
-import crook_jobs.py
+
+_RUN_PATH = Path('../run/crook')
 
 
 def is_ready(capacity):
     if is_shepherd_busy():
-        exit 1
+        sys.exit(1)
     if is_capacity_full(capacity):
-        exit 2
-    exit 0  
+        sys.exit(2)
+    sys.exit(0)  
 
 
-def is_shepherd_busy:
-    are_jobs_completed = crook_jobs.update_jobs_status()
-    return !are_jobs_completed
+def is_shepherd_busy():
+    are_jobs_completed = crook_jobs.update_jobs_status(_RUN_PATH)
+    return not are_jobs_completed
 
 # TOIMPLEMENT
 def is_capacity_full(capacity):
@@ -32,19 +35,20 @@ def main(capacity):
     if capacity:
         is_ready(capacity)
     else:
-        # read from stdin \0 delimited filenames. From the docs: "Note that if you want to send data to the process’s stdin, you need to create the Popen object with stdin=PIPE. Similarly, to get anything other than None in the result tuple, you need to give stdout=PIPE and/or stderr=PIPE too."
-        run_path = Path('./run/crook')
-        os.mkdir(run_path)        
-        with open('./run/crook/crook.fofn', 'w') as f:
+        os.makedirs(_RUN_PATH , exist_ok = True)        
+        with open(_RUN_PATH  / "crook.fofn", 'w') as f:
             files = sys.stdin.read()
             files.replace(r'\0', r'\n')
             f.write(files)
-        subprocess.run(['../shepherd.sh', 'submit', 'crook'])
+        output = subprocess.run(['../shepherd.sh', 'submit', 'crook'], capture_output=True)
+        job_id = crook_jobs.parse_output_for_jobId(output)
+        Jobs.save(job_id)
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Hand off files to archive to Shepherd)
-    parser.add_argument('ready', type = int, nargs = '?', help = 'check if shepherd is ready to take a new job of input capacity ')
+    parser = argparse.ArgumentParser(description="Hand off files to archive to Shepherd")
+    parser.add_argument('ready', nargs = '?', help = 'check if shepherd is ready')
+    parser.add_argument('capacity', nargs = '?', type = int, help = 'check if shepherd has the requisite capacity')
     args = parser.parse_args()
     capacity = args.ready
     main(capacity)
