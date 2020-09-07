@@ -22,10 +22,18 @@ def parse_output_for_jobId(log_output):
 
 def find_job_status(jobid):
     '''parse output of shephered status jobid to get status '''
-    output = subprocess.run(["../shepherd.sh" , "status", jobid], capture_output=True)
+    wd = os.getcwd()
+    os.chdir("..")
+    # output = subprocess.run(["./shepherd.sh" , "status", f"${jobid}"], capture_output=True)
+    # output = output.stderr
+    output = get_status_from_file()
+    os.chdir(wd)
+    print("Output", output)
+    parse_output_for_job_status(output)
+
+def parse_output_for_job_status(log_output):
     regex_for_job_status = re.compile(r"Failed: [01]")
-    for line in output.stderr:
-            # print(line)
+    for line in log_output:
         match_text = regex_for_job_status.search(line)
         if match_text:
             print("Matched:", match_text.group())
@@ -35,7 +43,6 @@ def find_job_status(jobid):
                 print("Job Status (0 means Completed):", id)
                 return id
                 print("Job ID:", id)
-
   
 
 def update_jobs_status():
@@ -52,12 +59,21 @@ def update_jobs_status():
     return are_jobs_completed
 
 
-
-
-if __name__ == "__main__":
-    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    log_rel_path = "../run/crook/submit.log"
+def get_status_from_file():
+    script_dir = os.path.dirname(__file__)
+    log_rel_path = "../run/crook/status.txt"
     log_file_path = os.path.join(script_dir, log_rel_path)
     with open(log_file_path, 'r') as f:
-        parse_output_for_jobId(f)
+        return f.read()
 
+if __name__ == "__main__":
+    # script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    # log_rel_path = "../run/crook/submit.log"
+    # log_file_path = os.path.join(script_dir, log_rel_path)
+    # with open(log_file_path, 'r') as f:
+    #     parse_output_for_jobId(f)
+    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    log_rel_path = "../run/crook/status.txt"
+    log_file_path = os.path.join(script_dir, log_rel_path)
+    with open(log_file_path, 'r') as f:
+        parse_output_for_job_status(f)

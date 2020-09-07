@@ -3,6 +3,7 @@ import fileinput
 import os
 import sys
 from pathlib import Path
+import subprocess
 
 import crook_jobs
 import jobs as Jobs
@@ -20,7 +21,7 @@ def is_ready(capacity):
 
 
 def is_shepherd_busy():
-    are_jobs_completed = crook_jobs.update_jobs_status(_RUN_PATH)
+    are_jobs_completed = crook_jobs.update_jobs_status()
     return not are_jobs_completed
 
 # TOIMPLEMENT
@@ -40,7 +41,11 @@ def main(capacity):
             files = sys.stdin.read()
             files.replace(r'\0', r'\n')
             f.write(files)
-        output = subprocess.run(['../shepherd.sh', 'submit', 'crook'], capture_output=True)
+        wd = os.getcwd()
+        os.chdir("..")
+        output = subprocess.run(['./shepherd.sh', 'submit', 'crook'], capture_output=True)
+        os.chdir(wd)
+        print("Output:" , output)
         job_id = crook_jobs.parse_output_for_jobId(output)
         Jobs.save(job_id)
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
