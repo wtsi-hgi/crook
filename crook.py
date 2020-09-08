@@ -46,7 +46,7 @@ def main(capacity):
         output = subprocess.run(['./shepherd.sh', 'submit', 'crook'], capture_output=True)
         os.chdir(wd)
         print("Output:" , output)
-        job_id = crook_jobs.parse_output_for_jobId(output)
+        job_id = crook_jobs.parse_output_for_jobId(output.stderr)
         Jobs.save(job_id)
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 

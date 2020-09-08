@@ -9,7 +9,7 @@ import jobs as Jobs
 def parse_output_for_jobId(log_output):
     """ parse output of log when submitting a job to Stepherd to get jobid"""
     regex_for_jobId = re.compile(r"Created new job with ID \d+")
-    for line in log_output:
+    for line in log_output.decode('utf-8').split('\n'):
         match_text = regex_for_jobId.search(line)
         if match_text:
             print("Matched:", match_text.group())
@@ -24,16 +24,17 @@ def find_job_status(jobid):
     '''parse output of shephered status jobid to get status '''
     wd = os.getcwd()
     os.chdir("..")
-    # output = subprocess.run(["./shepherd.sh" , "status", f"${jobid}"], capture_output=True)
-    # output = output.stderr
-    output = get_status_from_file()
+    output = subprocess.run(["./shepherd.sh" , "status", str(jobid)], capture_output=True)
+    output = output.stderr
     os.chdir(wd)
     print("Output", output)
     parse_output_for_job_status(output)
 
 def parse_output_for_job_status(log_output):
+    print("Input to parsing status", log_output)
     regex_for_job_status = re.compile(r"Failed: [01]")
-    for line in log_output:
+    for line in log_output.decode('utf-8').split('\n'):
+        print("Line: ", line)
         match_text = regex_for_job_status.search(line)
         if match_text:
             print("Matched:", match_text.group())
