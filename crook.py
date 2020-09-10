@@ -31,13 +31,23 @@ def is_capacity_full(capacity):
 
     # It is not straightforward to determine the remaining space available in an iRODS zone with icommands. It can be done with iquest and a suitable query, but there is no df-equivalent; fortunately, ISG run such a script and use it to populate Graphite -- the backend used by the metrics dashboards -- which provides a RESTful interface. crook can use this interface. TODO Interface details from ISG/Graphite documentation: URL, request and response.
 
+def get_fofn_index():
+    i = 0
+    while os.path.exists(_RUN_PATH/ "fofn-%s" % i):
+        i = i + 1
+    print("Returning fofn index: ", i )
+    return i
+
+
+
 
 def main(capacity):
     if capacity:
         is_ready(capacity)
     else:
+
         os.makedirs(_RUN_PATH , exist_ok = True)        
-        with open(_RUN_PATH  / "crook.fofn", 'w') as f:
+        with open(_RUN_PATH  / "fofn", 'w') as f:
             files = sys.stdin.read()
             files.replace(r'\0', r'\n')
             f.write(files)
@@ -48,6 +58,9 @@ def main(capacity):
         print("Output:" , output)
         job_id = crook_jobs.parse_output_for_jobId(output.stderr)
         Jobs.save(job_id)
+        script_dir = os.path.dirname(os.path.abspath(__file__)
+        file_path = os.path.join(script_dir, _RUN_PATH)
+        os.rename(_RUN_PATH  / "fofn", _RUN_PATH  / f"fofn-{job_id}")
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
 if __name__ == "__main__":
@@ -57,3 +70,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     capacity = args.ready
     main(capacity)
+   
+   
+    
+    
+    
