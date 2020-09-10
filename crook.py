@@ -45,7 +45,6 @@ def main(capacity):
     if capacity:
         is_ready(capacity)
     else:
-
         os.makedirs(_RUN_PATH , exist_ok = True)        
         with open(_RUN_PATH  / "fofn", 'w') as f:
             files = sys.stdin.read()
@@ -58,7 +57,7 @@ def main(capacity):
         print("Output:" , output)
         job_id = crook_jobs.parse_output_for_jobId(output.stderr)
         Jobs.save(job_id)
-        script_dir = os.path.dirname(os.path.abspath(__file__)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(script_dir, _RUN_PATH)
         os.rename(_RUN_PATH  / "fofn", _RUN_PATH  / f"fofn-{job_id}")
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
