@@ -1,7 +1,7 @@
 
 
 import sqlite3
-
+import logging
 
 _DB_NAME = 'jobs.db'
 
@@ -12,7 +12,8 @@ def create_connection(db):
     try:
         # When you connect to an SQLite database file that does not exist, SQLite automatically creates the new database for you.
         conn = sqlite3.connect(db)
-        conn.set_trace_callback(print)
+        # This will be called on every transaction
+        conn.set_trace_callback(logging.debug)
     except Error as e:
         print(e)
 
@@ -36,7 +37,7 @@ def findAll():
     all_jobs = all_jobs.fetchall()
     conn.commit()
     conn.close()
-    print("All Jobs: ", all_jobs)
+    logging.info(f"Output of finding all jobs: {all_jobs}")
     return all_jobs
 
 
@@ -55,7 +56,7 @@ def save(id):
 def update(job_id, job_status):
     conn = sqlite3.connect(_DB_NAME)
     query = f'''UPDATE jobs SET status = ? WHERE id = ?'''
-    print(f"Excuting update on {job_id} with {job_status}")
+    logging.debug(f"Excuting update on {job_id} with {job_status}")
     conn.execute(query, (job_status, job_id))
     conn.commit()
     conn.close()
@@ -66,7 +67,7 @@ def update(job_id, job_status):
 
 create_table()
 
-
+# Unit Tests
 if __name__ == "__main__":
    save(1)
    findAll()

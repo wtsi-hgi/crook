@@ -3,6 +3,8 @@ import fileinput
 import os
 import sys
 from pathlib import Path
+import logging
+logging.basicConfig(level=logging.NOTSET)
 import subprocess
 
 import crook_jobs
@@ -45,21 +47,33 @@ def main(capacity):
     if capacity:
         is_ready(capacity)
     else:
-        os.makedirs(_RUN_PATH , exist_ok = True)        
+        os.makedirs(_RUN_PATH , exist_ok = True) 
+         # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
+        files = sys.stdin.read()
+        files.replace(r'\0', r'\n')
+        logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")       
         with open(_RUN_PATH  / "fofn", 'w') as f:
-            files = sys.stdin.read()
-            files.replace(r'\0', r'\n')
             f.write(files)
         wd = os.getcwd()
         os.chdir("..")
-        output = subprocess.run(['./shepherd.sh', 'submit', 'crook'], capture_output=True)
+        completed_process = subprocess.run(['./shepherd.sh', 'submit', 'crook'], capture_output=True)
         os.chdir(wd)
-        print("Output:" , output)
-        job_id = crook_jobs.parse_output_for_jobId(output.stderr)
+        # Use Logging instead of print. 
+
+        logging.info(f"Stdout of `./shepherd.sh submit crook: {completed_process.stdout.decode('utf-8')}")
+
+        stderr = completed_process.stderr
+        job_id = crook_jobs.parse_output_for_jobId(stderr)
+        if job_id is None:
+            logging.critical(f"JobID not found in the stderr of shepherd submit: {stderr.decode('utf-8')}")
+            raise Exception("JobID not found")
         Jobs.save(job_id)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(script_dir, _RUN_PATH)
-        os.rename(_RUN_PATH  / "fofn", _RUN_PATH  / f"fofn-{job_id}")
+        logging.info(f"Saving fofn with job id at: {_RUN_PATH}/fofn-{job_id}") 
+        with open(_RUN_PATH  / f"fofn-{job_id}", 'w') as f:
+            f.write(files)
+      
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
 if __name__ == "__main__":
