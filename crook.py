@@ -6,13 +6,13 @@ from pathlib import Path
 import logging
 logging.basicConfig(level=logging.NOTSET)
 import subprocess
+import datetime 
 
 import crook_jobs
 import jobs as Jobs
 
-
-_RUN_PATH = Path('../run/crook')
-
+date = datetime.date.today() 
+_RUN_PATH = Path(f"../run/crook-{date}")
 
 def is_ready(capacity):
     if is_shepherd_busy():
@@ -42,7 +42,6 @@ def get_fofn_index():
 
 
 
-
 def main(capacity):
     if capacity:
         is_ready(capacity)
@@ -51,12 +50,12 @@ def main(capacity):
          # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
         files = sys.stdin.read()
         files.replace(r'\0', r'\n')
-        logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")       
+        logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")
         with open(_RUN_PATH  / "fofn", 'w') as f:
             f.write(files)
         wd = os.getcwd()
         os.chdir("..")
-        completed_process = subprocess.run(['./shepherd.sh', 'submit', 'crook'], capture_output=True)
+        completed_process = subprocess.run(['./shepherd.sh', 'submit', f'crook-{date}'], capture_output=True)
         os.chdir(wd)
         # Use Logging instead of print. 
 
