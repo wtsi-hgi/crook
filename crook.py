@@ -60,7 +60,7 @@ def main(capacity):
         os.chdir(wd)
         # Use Logging instead of print. 
 
-        logging.info(f"Stdout of `./shepherd.sh submit crook: {completed_process.stdout.decode('utf-8')}")
+        logging.info(f"Stderr of `./shepherd.sh submit crook: {completed_process.stderr.decode('utf-8')}")
 
         stderr = completed_process.stderr
         job_id = crook_jobs.parse_output_for_jobId(stderr)

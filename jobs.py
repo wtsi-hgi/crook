@@ -64,7 +64,7 @@ def update(job_id, job_status):
 
 
 
-
+logging.info("Checking if local jobs database exists")
 create_table()
 
 # Unit Tests
