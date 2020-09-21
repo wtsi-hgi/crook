@@ -65,7 +65,7 @@ def main(capacity):
         stderr = completed_process.stderr
         job_id = crook_jobs.parse_output_for_jobId(stderr)
         if job_id is None:
-            logging.critical(f"JobID not found in the stderr of shepherd submit: {stderr.decode('utf-8')}")
+            logging.critical(f"JobID not found in the stderr of shepherd submit:\n {stderr.decode('utf-8')}")
             raise Exception("JobID not found")
         Jobs.save(job_id)
         script_dir = os.path.dirname(os.path.abspath(__file__))
