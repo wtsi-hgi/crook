@@ -55,10 +55,10 @@ def update_jobs_status():
     are_jobs_completed = True
     for row in all_jobs:
         job_id = row[0]
-        job_status = row[1]
-        status = find_job_status(job_id)
-        Jobs.update(job_id, job_status)
-        if status == "Busy":
+        old_status = row[1]
+        new_status = find_job_status(job_id)
+        Jobs.update(job_id, new_status)
+        if new_status == "Busy":
             are_jobs_completed = False
     return are_jobs_completed
 
