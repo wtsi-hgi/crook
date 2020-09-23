@@ -50,7 +50,7 @@ def main(capacity):
         os.makedirs(_RUN_PATH , exist_ok = True) 
          # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
         files = sys.stdin.read()
-        files.replace(r'\0', r'\n')
+        files = files.replace(r'\0', '\n')
         logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")
         with open(_RUN_PATH  / "fofn", 'w') as f:
             f.write(files)
