@@ -1,7 +1,7 @@
 import re
 import os
 import subprocess
-
+import logging
 import jobs as Jobs
 
 
@@ -27,11 +27,10 @@ def find_job_status(jobid):
     output = subprocess.run(["./shepherd.sh" , "status", str(jobid)], capture_output=True)
     output = output.stderr
     os.chdir(wd)
-    print("Output", output)
+    logging.debug(f"Output of shepherd status for jobid {jobid}: {output}")
     parse_output_for_job_status(output)
-
 def parse_output_for_job_status(log_output):
-    print("Input to parsing status", log_output)
+    logging.debug(f"Input to parsing status: {log_output}")
     regex_for_job_status = re.compile(r"Failed: [01]")
     for line in log_output.decode('utf-8').split('\n'):
         print("Line: ", line)

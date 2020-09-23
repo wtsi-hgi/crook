@@ -7,6 +7,7 @@ import logging
 logging.basicConfig(level=logging.NOTSET)
 import subprocess
 import datetime 
+import json
 
 import crook_jobs
 import jobs as Jobs
@@ -53,6 +54,14 @@ def main(capacity):
         logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")
         with open(_RUN_PATH  / "fofn", 'w') as f:
             f.write(files)
+
+        metadata = {
+            "archive-date": str(date),
+            "archived-by": "crook"
+        }
+        logging.info(f"Writing metadata at: {_RUN_PATH}/metadata.json")
+        with open(_RUN_PATH  / "metadata.json", 'w') as f:
+            json.dump(metadata, f)
         wd = os.getcwd()
         os.chdir("..")
         completed_process = subprocess.run(['./shepherd.sh', 'submit', f'crook-{date}'], capture_output=True)
