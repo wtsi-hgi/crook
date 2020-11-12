@@ -30,6 +30,7 @@ def create_table():
 
 
 def findAll():
+    """Return list of all crook jobs"""
     conn = create_connection(_DB_NAME)
     c = conn.cursor()
     query = '''SELECT * from jobs'''
