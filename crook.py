@@ -2,18 +2,23 @@ import argparse
 import fileinput
 import os
 import sys
-from pathlib import Path
 import logging
 logging.basicConfig(level=logging.NOTSET)
 import subprocess
-import datetime 
 import json
+import datetime 
+from pathlib import Path
 
 import crook_jobs
 import jobs as Jobs
+import config
+
 
 date = datetime.date.today() 
-_RUN_PATH = Path(f"../run/crook-{date}")
+# Location for logs and the source of data(fofn, metadata etc.) for shepherd.
+_LOG_PATH = Path(config.logs) / f"crook-{date}"
+_ARCHIVER_PATH = Path(config.archiver)
+
 
 def is_ready(capacity):
     if is_shepherd_busy():
@@ -34,40 +39,45 @@ def is_capacity_full(capacity):
 
     # It is not straightforward to determine the remaining space available in an iRODS zone with icommands. It can be done with iquest and a suitable query, but there is no df-equivalent; fortunately, ISG run such a script and use it to populate Graphite -- the backend used by the metrics dashboards -- which provides a RESTful interface. crook can use this interface. TODO Interface details from ISG/Graphite documentation: URL, request and response.
 
-def get_fofn_index():
-    i = 0
-    while os.path.exists(_RUN_PATH/ "fofn-%s" % i):
-        i = i + 1
-    print("Returning fofn index: ", i )
-    return i
 
-
-
-def main(capacity):
-    if capacity:
-        is_ready(capacity)
-    else:
-        os.makedirs(_RUN_PATH , exist_ok = True) 
-         # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
-        files = sys.stdin.read()
-        files = files.replace('\x00', '\n')
-        logging.info(f"Writing temporary fofn at: {_RUN_PATH}/fofn")
-        with open(_RUN_PATH  / "fofn", 'w') as f:
-            f.write(files)
-
-        metadata = {
+def add_metadata():
+    metadata = {
             "archive-date": str(date),
             "archived-by": "crook"
         }
-        logging.info(f"Writing metadata at: {_RUN_PATH}/metadata.json")
-        with open(_RUN_PATH  / "metadata.json", 'w') as f:
-            json.dump(metadata, f)
-        wd = os.getcwd()
-        os.chdir("..")
-        completed_process = subprocess.run(['./shepherd.sh', 'submit', f'crook-{date}'], capture_output=True)
-        os.chdir(wd)
-        # Use Logging instead of print. 
 
+    logging.info(f"Writing metadata at: {_LOG_PATH}/metadata.json")
+    with open(_LOG_PATH  / "metadata.json", 'w') as f:
+        json.dump(metadata, f)
+
+
+def main(capacity = None):
+     # if capacity argument is passed, then just return boolean as to ready or not.
+    if capacity:
+        is_ready(capacity)
+    else:
+    # if capacity argument is not passed, then read input files from stdin and pass them to shepherd submit.
+        logging.info(f"Crook logging at: {_LOG_PATH}")
+        os.makedirs(_LOG_PATH , exist_ok = True) 
+         # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
+        
+        files = sys.stdin.read()
+        logging.info(f"Reading file paths from stdin: {files}")
+        logging.info(f"Inserting new line characters")
+        files = files.replace('\x00', '\n')
+        logging.info(f"Writing temporary fofn at: {_LOG_PATH}/fofn")
+        with open(_LOG_PATH  / "fofn", 'w') as f:
+            f.write(files)
+
+        # Write metadata submitted to shepherd. This is optional
+        add_metadata()
+
+      
+        try:
+            completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{date}"], capture_output=True)
+        except Error as response:
+            raise Error
+        # Use Logging instead of print. 
         #logging.debug(f"Stderr of `./shepherd.sh submit crook: {completed_process.stderr.decode('utf-8')}")
 
         stderr = completed_process.stderr
@@ -76,10 +86,11 @@ def main(capacity):
             logging.critical(f"JobID not found in the stderr of shepherd submit:\n {stderr.decode('utf-8')}")
             raise Exception("JobID not found")
         Jobs.save(job_id)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(script_dir, _RUN_PATH)
-        logging.info(f"Saving fofn with job id at: {_RUN_PATH}/fofn-{job_id}") 
-        with open(_RUN_PATH  / f"fofn-{job_id}", 'w') as f:
+       
+
+        # Write fofn submitted to shepherd with job id for logging and debugging
+        logging.info(f"Saving fofn with job id at: {_LOG_PATH}/fofn-{job_id}")  
+        with open(_LOG_PATH  / f"fofn-{job_id}", 'w') as f:
             f.write(files)
       
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
@@ -91,8 +102,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     capacity = args.ready
     main(capacity)
-   
-   
-    
-    
-    

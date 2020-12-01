@@ -1,9 +1,9 @@
-
-
 import sqlite3
 import logging
 
-_DB_NAME = 'jobs.db'
+import config
+
+_DB = config.db
 
 
 def create_connection(db):
@@ -21,7 +21,7 @@ def create_connection(db):
 
 
 def create_table():
-    conn = create_connection(_DB_NAME )
+    conn = create_connection(_DB)
     query = '''CREATE TABLE IF NOT EXISTS jobs
              (id int PRIMARY KEY, status text)'''
     conn.execute(query)
@@ -31,8 +31,7 @@ def create_table():
 
 def findAll():
     """Return list of all crook jobs"""
-    conn = create_connection(_DB_NAME)
-    c = conn.cursor()
+    conn = create_connection(_DB)
     query = '''SELECT * from jobs'''
     all_jobs = conn.execute(query)
     all_jobs = all_jobs.fetchall()
@@ -45,9 +44,7 @@ def findAll():
 # Might be userful later: https://stackoverflow.com/questions/418898/sqlite-upsert-not-insert-or-replace
 
 def save(id):
-    conn = create_connection(_DB_NAME )
-    # Instead of print, you may want to use a function from the logging module.
-    # c = conn.cursor()
+    conn = create_connection(_DB)
     query = f"INSERT OR REPLACE INTO jobs(id, status) VALUES (?, ?) "
     x = conn.execute(query, (id, 'busy'))
     conn.commit()
@@ -55,23 +52,12 @@ def save(id):
 
 
 def update(job_id, job_status):
-    conn = sqlite3.connect(_DB_NAME)
+    conn = sqlite3.connect(_DB)
     query = f'''UPDATE jobs SET status = ? WHERE id = ?'''
-    logging.debug(f"Excuting update on {job_id} with {job_status}")
     conn.execute(query, (job_status, job_id))
     conn.commit()
     conn.close()
 
-
-
-
 logging.info("Checking if local jobs database exists")
 create_table()
-
-# Unit Tests
-if __name__ == "__main__":
-   save(1)
-   findAll()
-   update(1, "completed")
-   findAll()
 
