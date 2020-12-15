@@ -1,3 +1,4 @@
+import sys
 import sqlite3
 import logging
 
@@ -14,8 +15,9 @@ def create_connection(db):
         conn = sqlite3.connect(db)
         # This will be called on every transaction
         conn.set_trace_callback(logging.debug)
-    except Error as e:
-        print(e)
+    except Exception as e:
+        print(f"{e}: {db}")
+        sys.exit(1)
 
     return conn
 

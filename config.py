@@ -1,4 +1,4 @@
-logs = "/Users/pa11/Code/shepherd-testing/run"
-archiver = "/Users/pa11/Code/shepherd-testing/shepherd.sh"
-db = "/Users/pa11/Code/shepherd-testing/crook/jobs.db"
-
+_root    = "/lustre/scratch119/humgen/teams/hgi/crook-shepherd"
+logs     = f"{_root}/run"
+archiver = f"{_root}/shepherd.sh"
+db       = f"{_root}/crook/jobs.db"
