@@ -2,18 +2,24 @@ from unittest import TestCase
 
 import jobs
 
+from datetime import datetime
+time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+
 
 class Test_Job_Database(TestCase):
 
 
     def test_save(self):
+     
         jobs.save(1)
         all_jobs = jobs.findAll()
-        self.assertEqual(all_jobs, [(1, "busy")])
+        self.assertEqual(all_jobs, [(1, "busy", time)])
 
     def test_update(self):
         jobs.update(1, "completed")
         all_jobs = jobs.findAll()
-        self.assertEqual(all_jobs, [(1, "completed")])
+        self.assertEqual(all_jobs, [(1, "completed", time)])
 
     

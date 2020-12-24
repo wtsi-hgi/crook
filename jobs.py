@@ -25,7 +25,7 @@ def create_connection(db):
 def create_table():
     conn = create_connection(_DB)
     query = '''CREATE TABLE IF NOT EXISTS jobs
-             (id int PRIMARY KEY, status text)'''
+             (id int PRIMARY KEY, status text, job_time text)'''
     conn.execute(query)
     conn.commit()
     conn.close()
@@ -47,7 +47,7 @@ def findAll():
 
 def save(id):
     conn = create_connection(_DB)
-    query = f"INSERT OR REPLACE INTO jobs(id, status) VALUES (?, ?) "
+    query = f"INSERT OR REPLACE INTO jobs(id, status, job_time) VALUES (?, ?, strftime('%Y-%m-%d %H:%M:%S')) "
     x = conn.execute(query, (id, 'busy'))
     conn.commit()
     conn.close()
