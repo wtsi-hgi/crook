@@ -31,10 +31,10 @@ def create_table():
     conn.close()
 
 
-def findAll():
+def findAllBusy():
     """Return list of all crook jobs"""
     conn = create_connection(_DB)
-    query = '''SELECT * from jobs'''
+    query = '''SELECT * from jobs WHERE status = "busy"'''
     all_jobs = conn.execute(query)
     all_jobs = all_jobs.fetchall()
     conn.commit()

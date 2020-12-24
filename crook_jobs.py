@@ -15,7 +15,7 @@ _SHEPHERD_STATUS_JOBID_REGEX = r"Transfer phase: In progress"
                 
 def update_jobs_status():
     """ update statys of all jobs in db to latest"""
-    all_jobs = Jobs.findAll()
+    all_jobs = Jobs.findAllBusy()
     are_jobs_completed = True
     for row in all_jobs:
         job_id = row[0]
