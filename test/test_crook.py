@@ -7,8 +7,8 @@ from pathlib import Path
 import crook
 import config
 
-import datetime
-date = datetime.date.today() 
+from datetime import datetime
+time = datetime.now().strftime('%H-%M-%d-%m-%Y')
 
 
 class Test_Crook(TestCase):
@@ -35,14 +35,14 @@ class Test_Crook(TestCase):
         crook.main(None)
 
         # check correct file names were passed to shepherd run path
-        _FOFN = Path(config.logs) / f"crook-{date}" /"fofn"
+        _FOFN = Path(config.logs) / f"crook-{time}" /"fofn"
         with open(_FOFN, 'r') as fofn:
             input_files = self.input_files.split('\x00')
             for input_file, saved_file in zip(input_files, fofn) :
                 self.assertEqual(input_file, saved_file.strip())
 
         # Check if shepherd submit was called with correct run path
-        shepherd_submit_mock.assert_called_once_with([Path(config.archiver), "submit", f"crook-{date}"], capture_output=True)
+        shepherd_submit_mock.assert_called_once_with([Path(config.archiver), "submit", f"crook-{time}"], capture_output=True)
 
         # Check if local jobs db was called to save the new job
         jobsdb_save_mock.assert_called_once_with(self.jobid_mock)

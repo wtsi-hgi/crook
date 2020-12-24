@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.NOTSET)
 import subprocess
 import json
-import datetime 
+from datetime import datetime
 from pathlib import Path
 
 import crook_jobs
@@ -14,9 +14,9 @@ import jobs as Jobs
 import config
 
 
-date = datetime.date.today() 
+time = datetime.now().strftime('%H-%M-%d-%m-%Y')
 # Location for logs and the source of data(fofn, metadata etc.) for shepherd.
-_LOG_PATH = Path(config.logs) / f"crook-{date}"
+_LOG_PATH = Path(config.logs) / f"crook-{time}"
 _ARCHIVER_PATH = Path(config.archiver)
 
 
@@ -42,7 +42,7 @@ def is_capacity_full(capacity):
 
 def add_metadata():
     metadata = {
-            "archive-date": str(date),
+            "archive-date": str(time),
             "archived-by": "crook"
         }
 
@@ -74,9 +74,9 @@ def main(capacity = None):
 
       
         try:
-            completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{date}"], capture_output=True)
-        except Error as response:
-            raise Error
+            completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{time}"], capture_output=True)
+        except Exception as e:
+            raise e
         # Use Logging instead of print. 
         #logging.debug(f"Stderr of `./shepherd.sh submit crook: {completed_process.stderr.decode('utf-8')}")
 
