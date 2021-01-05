@@ -20,6 +20,30 @@ _LOG_PATH = Path(config.logs) / f"crook-{time}"
 _ARCHIVER_PATH = Path(config.archiver)
 
 
+def fileLineIter(inputFile,
+                 inputNewline="\x00",
+                 outputNewline=None,
+                 readSize=8192):
+   """Like the normal file iter but you can set what string indicates newline.
+   
+   The newline string can be arbitrarily long; it need not be restricted to a
+   single character. You can also set the read size and control whether or not
+   the newline string is left on the end of the iterated lines.  Setting
+   newline to '\x00' is particularly good for use with an input file created with
+   something like "os.popen('find -print0')".
+   """
+   if outputNewline is None: 
+        outputNewline = inputNewline
+        partialLine = ''
+   while True:
+       charsJustRead = inputFile.read(readSize)
+       if not charsJustRead: break
+       partialLine += charsJustRead
+       lines = partialLine.split(inputNewline)
+       partialLine = lines.pop()
+       for line in lines: yield line + outputNewline
+   if partialLine: yield partialLine
+
 def is_ready(capacity):
     if is_shepherd_busy():
         sys.exit(1)
@@ -95,10 +119,11 @@ def main(capacity = None):
       
         #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hand off files to archive to Shepherd")
     parser.add_argument('ready', nargs = '?', help = 'check if shepherd is ready')
     parser.add_argument('capacity', nargs = '?', type = int, help = 'check if shepherd has the requisite capacity')
     args = parser.parse_args()
-    capacity = args.ready
+    capacity = args.capacity
     main(capacity)
