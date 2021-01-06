@@ -20,29 +20,31 @@ _LOG_PATH = Path(config.logs) / f"crook-{time}"
 _ARCHIVER_PATH = Path(config.archiver)
 
 
-def fileLineIter(inputFile,
-                 inputNewline="\x00",
-                 outputNewline=None,
-                 readSize=8192):
-   """Like the normal file iter but you can set what string indicates newline.
+# def fileLineIter(inputFile,
+#                  inputNewline="\x00",
+#                  outputNewline="\n",
+#                  readSize=8192):
+#    """Like the normal file iter but you can set what string indicates newline.
    
-   The newline string can be arbitrarily long; it need not be restricted to a
-   single character. You can also set the read size and control whether or not
-   the newline string is left on the end of the iterated lines.  Setting
-   newline to '\x00' is particularly good for use with an input file created with
-   something like "os.popen('find -print0')".
-   """
-   if outputNewline is None: 
-        outputNewline = inputNewline
-        partialLine = ''
-   while True:
-       charsJustRead = inputFile.read(readSize)
-       if not charsJustRead: break
-       partialLine += charsJustRead
-       lines = partialLine.split(inputNewline)
-       partialLine = lines.pop()
-       for line in lines: yield line + outputNewline
-   if partialLine: yield partialLine
+#    The newline string can be arbitrarily long; it need not be restricted to a
+#    single character. You can also set the read size and control whether or not
+#    the newline string is left on the end of the iterated lines.  Setting
+#    newline to '\x00' is particularly good for use with an input file created with
+#    something like "os.popen('find -print0')".
+#    """
+#     if outputNewline is None: 
+#         outputNewline = inputNewline
+#         partialLine = ''
+#     while True:
+#         charsJustRead = inputFile.read(readSize)
+#         if not charsJustRead: 
+#             break
+#         partialLine += charsJustRead
+#         lines = partialLine.split(inputNewline)
+#         partialLine = lines.pop()
+#         for line in lines:
+#             yield line + outputNewline
+#     if partialLine: yield partialLine
 
 def is_ready(capacity):
     if is_shepherd_busy():
@@ -87,8 +89,8 @@ def main(capacity = None):
         
         files = sys.stdin.read()
         logging.info(f"Reading file paths from stdin: {files}")
-        logging.info(f"Inserting new line characters")
         files = files.replace('\x00', '\n')
+        logging.info(f"After unserting new line characters {files}")
         logging.info(f"Writing temporary fofn at: {_LOG_PATH}/fofn")
         with open(_LOG_PATH  / "fofn", 'w') as f:
             f.write(files)
@@ -96,7 +98,6 @@ def main(capacity = None):
         # Write metadata submitted to shepherd. This is optional
         add_metadata()
 
-      
         try:
             completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{time}"], capture_output=True)
         except Exception as e:
@@ -111,7 +112,6 @@ def main(capacity = None):
             raise Exception("JobID not found")
         Jobs.save(job_id)
        
-
         # Write fofn submitted to shepherd with job id for logging and debugging
         logging.info(f"Saving fofn with job id at: {_LOG_PATH}/fofn-{job_id}")  
         with open(_LOG_PATH  / f"fofn-{job_id}", 'w') as f:

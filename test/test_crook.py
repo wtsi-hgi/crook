@@ -14,8 +14,8 @@ time = datetime.now().strftime('%H-%M-%d-%m-%Y')
 class Test_Crook(TestCase):
 
     def setUp(self):
-        completed_process = subprocess.run(['test/vault-test.sh'], capture_output=True)
-        self.input_files = completed_process.stdout.decode('utf-8') + "\x00"
+        completed_process = subprocess.run(['test/vault-test-10.sh'], capture_output=True)
+        self.input_files = completed_process.stdout.decode('utf-8')
         logging.debug(f"Test Set Up. File in staging: {self.input_files}")
         # output = "/tmp/tmp.9Q0LiyUGjP/.vault/.staged/08/98-bXlfdGVzdF9maWxl\x00"
         self.jobid_mock = 1
@@ -38,7 +38,7 @@ class Test_Crook(TestCase):
         _FOFN = Path(config.logs) / f"crook-{time}" /"fofn"
         with open(_FOFN, 'r') as fofn:
             input_files = self.input_files.split('\x00')
-            for input_file, saved_file in zip(input_files, fofn) :
+            for input_file, saved_file in zip(input_files, fofn):
                 self.assertEqual(input_file, saved_file.strip())
 
         # Check if shepherd submit was called with correct run path
