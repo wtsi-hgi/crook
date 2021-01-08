@@ -1,7 +1,7 @@
 from unittest import TestCase, mock
 import subprocess
 import logging
-import os
+import os, io
 from pathlib import Path
 
 import crook
@@ -28,7 +28,7 @@ class Test_Crook(TestCase):
         """Test if the correct run directory is passed and jobs database is called""" 
 
         # sys.stdin.read() will return "/tmp/tmp.9Q0LiyUGjP/.vault/.staged/08/98-bXlfdGVzdF9maWxl\x00"
-        crook.sys.stdin.read = lambda :self.input_files
+        crook.sys.stdin = io.StringIO(self.input_files)
         # subprocess.run() will return shepherd_submit_mock instead of completed_process. shepherd_submit_mock.stderr will return sample_stderr instead of actual std err. 
         shepherd_submit_mock.return_value.stderr = self.sample_stderr
 

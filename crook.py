@@ -20,31 +20,28 @@ _LOG_PATH = Path(config.logs) / f"crook-{time}"
 _ARCHIVER_PATH = Path(config.archiver)
 
 
-# def fileLineIter(inputFile,
-#                  inputNewline="\x00",
-#                  outputNewline="\n",
-#                  readSize=8192):
-#    """Like the normal file iter but you can set what string indicates newline.
-   
-#    The newline string can be arbitrarily long; it need not be restricted to a
-#    single character. You can also set the read size and control whether or not
-#    the newline string is left on the end of the iterated lines.  Setting
-#    newline to '\x00' is particularly good for use with an input file created with
-#    something like "os.popen('find -print0')".
-#    """
-#     if outputNewline is None: 
-#         outputNewline = inputNewline
-#         partialLine = ''
-#     while True:
-#         charsJustRead = inputFile.read(readSize)
-#         if not charsJustRead: 
-#             break
-#         partialLine += charsJustRead
-#         lines = partialLine.split(inputNewline)
-#         partialLine = lines.pop()
-#         for line in lines:
-#             yield line + outputNewline
-#     if partialLine: yield partialLine
+def fileLineIter(inputFile,
+                 inputNewline="\x00",
+                 outputNewline="\n",
+                 readSize=8192):
+    last = ""
+    while True:
+        block = inputFile.read(readSize)
+        # print(f"block: {block}")
+        if not block: break
+        record_chunks = block.split(inputNewline)
+        if len(record_chunks) == 1:
+            last += record_chunks
+        else:
+        
+            x = last + record_chunks[0] + outputNewline
+            yield x
+            for record in record_chunks[1:-1]:
+                yield record + outputNewline
+
+            last = record_chunks[-1]
+    if last:
+        yield last + outputNewline
 
 def is_ready(capacity):
     if is_shepherd_busy():
@@ -85,15 +82,16 @@ def main(capacity = None):
     # if capacity argument is not passed, then read input files from stdin and pass them to shepherd submit.
         logging.info(f"Crook logging at: {_LOG_PATH}")
         os.makedirs(_LOG_PATH , exist_ok = True) 
-         # FIXME: Instead of loading the entire in memory at once, have \0 as line separator in shepherd and pass it line by line
-        
-        files = sys.stdin.read()
-        logging.info(f"Reading file paths from stdin: {files}")
-        files = files.replace('\x00', '\n')
-        logging.info(f"After unserting new line characters {files}")
+    
         logging.info(f"Writing temporary fofn at: {_LOG_PATH}/fofn")
+
         with open(_LOG_PATH  / "fofn", 'w') as f:
-            f.write(files)
+            for filepath in fileLineIter(inputFile = sys.stdin, inputNewline="\x00",
+                 outputNewline="\n", readSize = 1024):
+                logging.debug(f"Writing file path to disk after inserting new line character: {filepath}")
+                f.write(filepath)
+
+        # logging.info(f"Reading file paths from stdin: {files}")
 
         # Write metadata submitted to shepherd. This is optional
         add_metadata()
@@ -111,13 +109,6 @@ def main(capacity = None):
             logging.critical(f"JobID not found in the stderr of shepherd submit:\n {stderr.decode('utf-8')}")
             raise Exception("JobID not found")
         Jobs.save(job_id)
-       
-        # Write fofn submitted to shepherd with job id for logging and debugging
-        logging.info(f"Saving fofn with job id at: {_LOG_PATH}/fofn-{job_id}")  
-        with open(_LOG_PATH  / f"fofn-{job_id}", 'w') as f:
-            f.write(files)
-      
-        #Shepherd accepts a file of filenames as input to its submit subcommand. However, this file is assumed to be n-delimited in the current release. However, the code exists to specify an arbitrary delimiter (see shepherd:cli.dummy.prepare, which calls shepherd:common.models.filesystems.posix._identify_by_fofn).
 
 
 if __name__ == "__main__":
