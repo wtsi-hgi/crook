@@ -8,6 +8,7 @@ import subprocess
 import json
 from datetime import datetime
 from pathlib import Path
+import requests
 
 import crook_jobs
 import jobs as Jobs
@@ -43,10 +44,10 @@ def fileLineIter(inputFile,
     if last:
         yield last + outputNewline
 
-def is_ready(capacity):
+def is_ready(requested_capacity):
     if is_shepherd_busy():
         sys.exit(1)
-    if is_capacity_full(capacity):
+    if is_capacity_available(requested_capacity, config.CAPACITY_THRESHOLD):
         sys.exit(2)
     sys.exit(0)  
 
@@ -55,15 +56,30 @@ def is_shepherd_busy():
     are_jobs_completed = crook_jobs.update_jobs_status()
     return not are_jobs_completed
 
-# TOIMPLEMENT
-def is_capacity_full(capacity):
-    return False
+def is_capacity_available(requested, threshold):
     '''When crook is given a "ready challenge", it must check that the available capacity of the archival location (i.e., the Humgen iRODS zone) exceeds that which is requested, plus a 10% threshold. For example, if a capacity of 1000 bytes is requested, crook must only respond positively if at least 1100 bytes are available.'''
-
-    # It is not straightforward to determine the remaining space available in an iRODS zone with icommands. It can be done with iquest and a suitable query, but there is no df-equivalent; fortunately, ISG run such a script and use it to populate Graphite -- the backend used by the metrics dashboards -- which provides a RESTful interface. crook can use this interface. TODO Interface details from ISG/Graphite documentation: URL, request and response.
-
+    green_free = find_free_capacity("green")
+    red_free = find_free_capacity("red")
+    available = min(green_free, red_free)
+    needed = requested*(1+ threshold/100)
+    if available < needed:
+        print(f" Available capacity {available} is less than needed (requested capacity + {threshold}%): {needed}")
+        return True
+    else:
+        print(f" Available capacity {available} is more than needed (requested capacity + {threshold}%): {needed}")
+        return False
+    
+def find_free_capacity(colour):
+    '''Helper method to query Graphite API for irods capacity in the relevant replica. At the moment of writing, the replicas are named "red" and green'''
+    _URL = f"http://graphite.internal.sanger.ac.uk/render?target=irods.v4capacity.humgen.{colour}.free)&format=json&PRETTY=1"
+    r = requests.get(_URL)
+    data = r.json()
+    free_bytes = int(data[0]['datapoints'].pop()[0])
+    return free_bytes
+   
 
 def add_metadata():
+
     metadata = {
             "archive-date": str(time),
             "archived-by": "crook"
@@ -116,5 +132,5 @@ if __name__ == "__main__":
     parser.add_argument('ready', nargs = '?', help = 'check if shepherd is ready')
     parser.add_argument('capacity', nargs = '?', type = int, help = 'check if shepherd has the requisite capacity')
     args = parser.parse_args()
-    capacity = args.capacity
-    main(capacity)
+    requested_capacity = args.capacity
+    main(requested_capacity)
