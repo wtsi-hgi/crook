@@ -63,24 +63,40 @@ def is_capacity_full(requested, threshold):
     available = min(green_free, red_free)
     needed = requested*(1+ threshold/100)
     if available < needed:
-        print(f" Available capacity {available} is less than needed (requested capacity + {threshold}%): {needed}")
+        logging.warning(f" Available capacity {available} is less than needed (requested capacity + {threshold}%): {needed}")
         return True
     else:
-        print(f" Available capacity {available} is more than needed (requested capacity + {threshold}%): {needed}")
+        logging.info(f" Available capacity {available} is more than needed (requested capacity + {threshold}%): {needed}")
         return False
     
 def find_free_capacity(colour):
     '''Helper method to query Graphite API for irods capacity in the relevant replica. At the moment of writing, the replicas are named "red" and "green"'''
 
     _URL = f"http://graphite.internal.sanger.ac.uk/render?target=irods.v4capacity.humgen.{colour}.free&format=json&PRETTY=1"
-    r = requests.get(_URL)
-    data = r.json()
-    # Expected data = ['project':.... 'datapoints: [..., [bytes, UNIX timestamp - 1 hour], [bytes, UNIX timestamp]]'].
-    # If you do the request on the hour (up to ~15 minutes thereafter), the last tuple's value is (null, <timestamp>); presumably because the datapoint is still being calculated. Your code should return the latest non-null datapoint, rather than assuming the last one is valid.
+   
+    
+    data = []
+    try:
+        r = requests.get(_URL,  timeout = 5)
+        if r.status_code != 200:
+            raise Exception((f"Graphite response is not successful. Status code: {r.status_code}"))
+    except Exception as e:
+        logging.warning(f"Error fetching data from Graphite: {e}")
+        # raise e
+    else:
+        data = r.json()
+    # Expected json from response = 
+    #. {['project': .... , 'datapoints': [..., [bytes, UNIX timestamp - 1 hour], [bytes, UNIX timestamp]]]'}.
+
+    # If the request is on the hour (up to ~15 minutes thereafter), the last tuple's value is (null, <timestamp>); presumably because the datapoint is still being calculated. The code returns the latest non-null datapoint, rather than assuming the last one is valid.
     free_bytes = None
+    logging.debug(f"JSON Data from response: {data}")
     while free_bytes == None:
-        free_bytes = int(data[0]['datapoints'].pop()[0])
-    return free_bytes
+        [free_bytes, timestamp]  = data[0]['datapoints'].pop()  
+        logging.debug(f"Free bytes data point found: {free_bytes} timestamp: {timestamp}") 
+    if free_bytes == None:
+        log.warning(f"Free bytes entry found from querying is None")
+    return int(free_bytes)
    
 
 def add_metadata():
