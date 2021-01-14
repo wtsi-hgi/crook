@@ -47,7 +47,7 @@ def fileLineIter(inputFile,
 def is_ready(requested_capacity):
     if is_shepherd_busy():
         sys.exit(1)
-    if is_capacity_available(requested_capacity, config.CAPACITY_THRESHOLD):
+    if is_capacity_full(requested_capacity, config.CAPACITY_THRESHOLD):
         sys.exit(2)
     sys.exit(0)  
 
@@ -56,7 +56,7 @@ def is_shepherd_busy():
     are_jobs_completed = crook_jobs.update_jobs_status()
     return not are_jobs_completed
 
-def is_capacity_available(requested, threshold):
+def is_capacity_full(requested, threshold):
     '''When crook is given a "ready challenge", it must check that the available capacity of the archival location (i.e., the Humgen iRODS zone) exceeds that which is requested, plus a 10% threshold. For example, if a capacity of 1000 bytes is requested, crook must only respond positively if at least 1100 bytes are available.'''
     green_free = find_free_capacity("green")
     red_free = find_free_capacity("red")
@@ -70,11 +70,16 @@ def is_capacity_available(requested, threshold):
         return False
     
 def find_free_capacity(colour):
-    '''Helper method to query Graphite API for irods capacity in the relevant replica. At the moment of writing, the replicas are named "red" and green'''
-    _URL = f"http://graphite.internal.sanger.ac.uk/render?target=irods.v4capacity.humgen.{colour}.free)&format=json&PRETTY=1"
+    '''Helper method to query Graphite API for irods capacity in the relevant replica. At the moment of writing, the replicas are named "red" and "green"'''
+
+    _URL = f"http://graphite.internal.sanger.ac.uk/render?target=irods.v4capacity.humgen.{colour}.free&format=json&PRETTY=1"
     r = requests.get(_URL)
     data = r.json()
-    free_bytes = int(data[0]['datapoints'].pop()[0])
+    # Expected data = ['project':.... 'datapoints: [..., [bytes, UNIX timestamp - 1 hour], [bytes, UNIX timestamp]]'].
+    # If you do the request on the hour (up to ~15 minutes thereafter), the last tuple's value is (null, <timestamp>); presumably because the datapoint is still being calculated. Your code should return the latest non-null datapoint, rather than assuming the last one is valid.
+    free_bytes = None
+    while free_bytes == None:
+        free_bytes = int(data[0]['datapoints'].pop()[0])
     return free_bytes
    
 
