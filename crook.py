@@ -73,7 +73,6 @@ def find_free_capacity(colour):
     '''Helper method to query Graphite API for irods capacity in the relevant replica. At the moment of writing, the replicas are named "red" and "green"'''
 
     _URL = f"http://graphite.internal.sanger.ac.uk/render?target=irods.v4capacity.humgen.{colour}.free&format=json&PRETTY=1"
-   
     
     data = []
     try:
@@ -82,7 +81,7 @@ def find_free_capacity(colour):
             raise Exception((f"Graphite response is not successful. Status code: {r.status_code}"))
     except Exception as e:
         logging.warning(f"Error fetching data from Graphite: {e}")
-        # raise e
+        raise e
     else:
         data = r.json()
     # Expected json from response = 
