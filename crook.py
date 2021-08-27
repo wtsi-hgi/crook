@@ -132,14 +132,13 @@ def main(capacity = None):
         # Write metadata submitted to shepherd. This is optional
         add_metadata()
 
-        try:
-            completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{time}"], capture_output=True)
-        except Exception as e:
-            raise e
-        # Use Logging instead of print. 
-        #logging.debug(f"Stderr of `./shepherd.sh submit crook: {completed_process.stderr.decode('utf-8')}")
-
+        completed_process = subprocess.run([_ARCHIVER_PATH, 'submit', f"crook-{time}"], capture_output=True)
         stderr = completed_process.stderr
+        
+        if completed_process.returncode != 0:
+            raise Exception(f"Shepherd run failed.\n {stderr.decode('utf-8')}")
+            
+        
         job_id = crook_jobs.parse_output_for_jobId(stderr)
         if job_id is None:
             logging.critical(f"JobID not found in the stderr of shepherd submit:\n {stderr.decode('utf-8')}")
