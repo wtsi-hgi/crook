@@ -143,7 +143,11 @@ def main(capacity = None):
         if job_id is None:
             logging.critical(f"JobID not found in the stderr of shepherd submit:\n {stderr.decode('utf-8')}")
             raise Exception("JobID not found")
-        Jobs.save(job_id)
+        try:
+            Jobs.save(job_id)
+        except Exception as e:
+            logging.warning(f"Saving job to local SQLite database failed: Jobs.save(job_id): {e}")
+            raise e
 
 
 if __name__ == "__main__":
