@@ -2,8 +2,8 @@ from unittest import TestCase
 
 import jobs
 
-from datetime import datetime
-time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+from datetime import datetime, timezone
+time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 import logging
 
 
